@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/redux/4.1.2/redux.min.js"></script>
     <title>Udacity To-Dos and Goals</title>
 </head>
 <body>
@@ -25,6 +26,10 @@
 
 
         //Library
+        
+
+
+        /*
         function createStore (reducer) {
             // A loja deve ter 4 partes
             // 1. The State
@@ -54,6 +59,7 @@
                 dispatch
             }
         }
+        */
 
 
         //App Code
@@ -128,15 +134,18 @@
                     return State
             }
         }
-
+/*
         function app (State = {}, action){
             return {
                 todos: todos(State.todos, action),
                 goals: goals(State.goals, action),
             }
         }
-
-        const store = createStore(app)
+*/
+        const store = Redux.createStore(Redux.combineReducers({
+            todos,
+            goals,
+        }))
 
         store.subscribe(() => {
             const { goals, todos } = store.getState();
