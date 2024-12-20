@@ -7,9 +7,13 @@
     <script src="https://unpkg.com/react@17.0.2/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone@7.17.6/babel.min.js"></script>
+    <script src="https://tylermcginnis.com/goals-todos-api/index.js"></script>
+    <script src="https://unpkg.com/redux-thunk@2.2.0/dist/redux-thunk.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/redux/4.1.2/redux.js"></script>
     <title>Udacity To-Dos and Goals</title>
 </head>
 <body>
+    <!--
     <center><h1>HTML</h1></center>
     <div>
         <h1>To dos List</h1>
@@ -25,6 +29,7 @@
     </div>
 
     <hr />
+    -->
 
     <div id="app"></div>
 
@@ -81,6 +86,8 @@
         const ADD_GOAL = 'ADD_GOAL'
         const REMOVE_GOAL = 'REMOVE_GOAL'
 
+        const RECEIVE_DATA = "RECEIVE_DATA"
+
         //Action Creators
         function addTodoAction (todo) {
             return {
@@ -118,6 +125,76 @@
         }
 
 
+        function receiveDataAction(todos, goals){
+            return {
+                type: RECEIVE_DATA,
+                todos,
+                goals,
+            }
+        }
+
+        function handleInitialData() {
+            return (dispatch) => {
+                Promise.all([API.fetchTodos(), API.fetchGoals()]).then(([todos, goals]) => {
+                    dispatch(receiveDataAction(todos, goals))
+                })
+            }
+        }
+
+        function handleAddTodo(name, cb) {
+            return (dispatch) => {
+                return API.saveTodo(name).then((todo) => {
+                    dispatch(addTodoAction(todo));
+                    cb();
+                }).catch(() => {
+                    alert("Ocorreu um erro! Tente novamente")
+                })
+            }
+        }
+
+        function handleDeleteTodo(todo){
+            return (dispatch) => {
+                dispatch(removeTodoAction(todo.id));
+
+                return API.deleteTodo(todo.id).catch(() => {
+                    dispatch(addTodoAction(todo))
+                    alert("Ocorreu um erro! Tente novamente")
+                })
+            }
+        }
+
+        function handleToggle(id){
+            return (dispatch) => {
+                dispatch(toggleTodoAction(id));
+
+                return API.saveTodoToggle(id).catch(() => {
+                    dispatch(toggleTodoAction(id));
+                    alert("Ocorreu um erro! Tente novamente")
+                })
+            }
+        }
+
+        function handleAddGoal(name, cb) {
+            return (dispatch) => {
+                return API.saveGoal(name).then((goal) => {
+                    dispatch(addGoalAction(goal));
+                    cb();
+                }).catch(() => 
+                alert("Ocorreu um erro! Tente novamente"));
+            };
+        } 
+
+        function handleDeleteGoal (goal){
+            return (dispatch) => {
+                dispatch(removeGoalAction(goal.id));
+
+                return API.deleteGoal(goal.id).catch(() => {
+                    dispatch(addGoalAction(goal));
+                    alert("Ocorreu um erro! Tente novamente")
+                })
+            }
+        }
+
         //Function Reducers
         //Função pura
         function todos (State=[], action) {
@@ -128,6 +205,8 @@
                     return State.filter((todo) => todo.id !== action.id)
                 case TOGGLE_TODO :
                     return State.map((todo) => todo.id !== action.id ? todo : Object.assign({}, todo, {complete: !todo.complete}))
+                case RECEIVE_DATA: 
+                    return action.todos;
                 default :
                     return State
             }
@@ -139,6 +218,8 @@
                     return State.concat([action.goal])
                 case REMOVE_GOAL:
                     return State.filter((goal) => goal.id !== action.id)
+                case RECEIVE_DATA:
+                    return action.goals;
                 default :
                     return State
             }
@@ -152,7 +233,14 @@
         }
 */
 
-      
+        function loading (state = true, action) {
+            switch(action.type){
+                case RECEIVE_DATA:
+                    return false;
+                default:
+                    return state;
+            }
+        }
 
         const checker = (store) => (next) => (action) => {
             if(
@@ -181,13 +269,22 @@
             console.groupEnd()
             return result
         }
+/*
+        const thunk = (store) => (next) => (action) => {
+            if (typeof action === "function"){
+                return action(store.dispatch);
+            }
 
+            next(action)
+        }
+*/
 
         const store = Redux.createStore(Redux.combineReducers({
             todos,
             goals,
-        }), Redux.applyMiddleware(checker, logger))
-
+            loading,
+        }), Redux.applyMiddleware(ReduxThunk.default, checker, logger))
+/*
         store.subscribe(() => {
             const { goals, todos } = store.getState();
             document.getElementById("goals").innerHTML = "";
@@ -196,6 +293,8 @@
             todos.forEach(addTodoToDOM);
         })
 
+
+        
         //To the HTML
         //DOM Code
         function addTodo (){
@@ -263,6 +362,7 @@
         node.appendChild(removeBtn)
         document.getElementById("goals").append(node);
       }
+        */
     </script>
 
     <script type="text/babel">
@@ -290,22 +390,19 @@
 
             const addItem = (e) => {
                 e.preventDefault();
-                const name = inputRef.current.value;
-                inputRef.current.value = "";
 
-                props.store.dispatch(addTodoAction({
-                    name,
-                    complete: false,
-                    id: generateId(), 
-                }))
+                props.store.dispatch(handleAddTodo(
+                    inputRef.current.value,
+                    () => (inputRef.current.value = "")
+                ))
             }
 
             const removeItem = (todo) => {
-                props.store.dispatch(removeTodoAction(todo.id));
+                props.store.dispatch(handleDeleteTodo(todo));
             }
 
             const toggleItem = (id) => {
-                props.store.dispatch(toggleTodoAction(id));
+                props.store.dispatch(handleToggle(id));
             }
  
             return (
@@ -322,17 +419,15 @@
 
             const addItem = (e) => {
                 e.preventDefault();
-                const name = inputRef.current.value;
-                inputRef.current.value = "";
-
-                props.store.dispatch(addGoalAction({
-                    id: generateId(),
-                    name,
-                }))
+                props.store.dispatch(handleAddGoal(
+                    inputRef.current.value,
+                    () => (inputRef.current.value = " ")
+                ))
             }
 
             const removeItem = (goal) => {
-                props.store.dispatch(removeGoalAction(goal.id));
+                props.store.dispatch(handleDeleteGoal(goal));
+                
             }
 
             return (
@@ -349,12 +444,27 @@
             const [value, setValue] = React.useState(0)
 
             React.useEffect(() => {
+                props.store.dispatch(handleInitialData())
+
                 props.store.subscribe(() => {
                     setValue((value) => value + 1)
                 })
             }, [])
+        
 
-            const {todos, goals } = props.store.getState()
+            
+
+            const {todos, goals, loading} = props.store.getState()
+
+            if(loading === true){
+                return (
+                    <div id="loading">
+                        <h3 id="loading-text">Loading</h3>
+                        <div id="loading-spinner"></div>
+                    </div>
+                )
+            }
+
             return (
                 <div>
                     <center><h1>REACT</h1></center>
@@ -371,3 +481,39 @@
     </script>
 </body>
 </html>
+
+<style>
+    #loading {
+    display: flex;
+    flex-direction: row; /* Alinha o texto e o spinner lado a lado */
+    justify-content: center; /* Centraliza horizontalmente */
+    align-items: center; /* Centraliza verticalmente */
+    height: auto; /* Faz o contêiner ocupar a altura da tela */
+}
+
+#loading-spinner {
+    width: 25px; /* Largura do círculo */
+    height: 25px; /* Altura do círculo */
+    border: 5px solid #ccc; /* Cor do fundo do círculo */
+    border-top: 5px solid #3498db; /* Cor da parte visível do círculo */
+    border-radius: 50%; /* Faz o círculo */
+    animation: spin 1s linear infinite; /* Animação para girar */
+    margin-left: 10px; /* Espaço entre o texto e o spinner */
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg); /* Começa sem rotação */
+    }
+    to {
+        transform: rotate(360deg); /* Rotaciona 360 graus */
+    }
+}
+
+#loading-text {
+    color: #555; /* Cor do texto */
+    font-family: Arial, sans-serif; /* Fonte do texto */
+    font-size: 18px; /* Tamanho da fonte */
+}
+
+</style>
