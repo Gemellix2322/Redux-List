@@ -391,18 +391,18 @@
             const addItem = (e) => {
                 e.preventDefault();
 
-                props.store.dispatch(handleAddTodo(
+                props.dispatch(handleAddTodo(
                     inputRef.current.value,
                     () => (inputRef.current.value = "")
                 ))
             }
 
             const removeItem = (todo) => {
-                props.store.dispatch(handleDeleteTodo(todo));
+                props.dispatch(handleDeleteTodo(todo));
             }
 
             const toggleItem = (id) => {
-                props.store.dispatch(handleToggle(id));
+                props.dispatch(handleToggle(id));
             }
  
             return (
@@ -414,19 +414,34 @@
                 </div>
             )
         }
+
+        const ConnectedTodos = () => {
+            return (
+                <Context.Consumer>
+                    {
+                        (store) => {
+                            const {todos} = store.getState();
+
+                            return <Todos todos={todos} dispatch={store.dispatch}/>
+                        }
+                    }
+                </Context.Consumer>
+            )
+        }
+
         const Goals = (props) => {
             const inputRef = React.useRef();
 
             const addItem = (e) => {
                 e.preventDefault();
-                props.store.dispatch(handleAddGoal(
+                props.dispatch(handleAddGoal(
                     inputRef.current.value,
                     () => (inputRef.current.value = " ")
                 ))
             }
 
             const removeItem = (goal) => {
-                props.store.dispatch(handleDeleteGoal(goal));
+                props.dispatch(handleDeleteGoal(goal));
                 
             }
 
@@ -437,6 +452,20 @@
                     <button onClick={addItem}>Add Goal</button>
                     <List remove={removeItem} items={props.goals}/>    
                 </div>
+            )
+        }
+
+        const ConnectedGoals = () => {
+            return(
+                <Context.Consumer>
+                    {
+                        (store) => {
+                            const {goals} = store.getState() 
+
+                            return <Goals goals={goals} dispatch={store.dispatch}/>
+                        }
+                    }
+                </Context.Consumer>
             )
         }
 
@@ -454,7 +483,7 @@
 
             
 
-            const {todos, goals, loading} = props.store.getState()
+            const {loading} = props.store.getState()
 
             if(loading === true){
                 return (
@@ -469,15 +498,37 @@
                 <div>
                     <center><h1>REACT</h1></center>
                     <div>
-                    <Todos todos={todos} store={props.store}/>
-                    <Goals goals={goals} store={props.store}/>    
+                    <ConnectedTodos/>
+                    <ConnectedGoals/>  
                     </div>    
                 </div>
                 
             )
         }
 
-        ReactDOM.render(<App store={store}/>, document.getElementById("app"))
+        const ConnectedApp = () => {
+            return (
+                <Context.Consumer>
+                    {
+                        (store) => {
+                          return <App store={store}/>
+                        }
+                    }
+                </Context.Consumer>
+            )
+        }
+ 
+        const Context = React.createContext();
+
+        const Provider = (props) => {
+            return(
+                <Context.Provider value={props.store}>
+                    {props.children}
+                </Context.Provider>
+            )
+        }
+
+        ReactDOM.render(<Provider store={store}><ConnectedApp /></Provider>, document.getElementById("app"))
     </script>
 </body>
 </html>
@@ -485,35 +536,35 @@
 <style>
     #loading {
     display: flex;
-    flex-direction: row; /* Alinha o texto e o spinner lado a lado */
-    justify-content: center; /* Centraliza horizontalmente */
-    align-items: center; /* Centraliza verticalmente */
-    height: auto; /* Faz o contêiner ocupar a altura da tela */
+    flex-direction: row; 
+    justify-content: center; 
+    align-items: center;
+    height: auto; 
 }
 
 #loading-spinner {
-    width: 25px; /* Largura do círculo */
-    height: 25px; /* Altura do círculo */
-    border: 5px solid #ccc; /* Cor do fundo do círculo */
-    border-top: 5px solid #3498db; /* Cor da parte visível do círculo */
-    border-radius: 50%; /* Faz o círculo */
-    animation: spin 1s linear infinite; /* Animação para girar */
-    margin-left: 10px; /* Espaço entre o texto e o spinner */
+    width: 25px;
+    height: 25px; 
+    border: 5px solid #ccc; 
+    border-top: 5px solid #3498db; 
+    border-radius: 50%; 
+    animation: spin 1s linear infinite; 
+    margin-left: 10px; 
 }
 
 @keyframes spin {
     from {
-        transform: rotate(0deg); /* Começa sem rotação */
+        transform: rotate(0deg); 
     }
     to {
-        transform: rotate(360deg); /* Rotaciona 360 graus */
+        transform: rotate(360deg); 
     }
 }
 
 #loading-text {
-    color: #555; /* Cor do texto */
-    font-family: Arial, sans-serif; /* Fonte do texto */
-    font-size: 18px; /* Tamanho da fonte */
+    color: #555; 
+    font-family: Arial, sans-serif; 
+    font-size: 18px; 
 }
 
 </style>
