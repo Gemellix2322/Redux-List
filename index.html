@@ -10,6 +10,7 @@
     <script src="https://tylermcginnis.com/goals-todos-api/index.js"></script>
     <script src="https://unpkg.com/redux-thunk@2.2.0/dist/redux-thunk.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/redux/4.1.2/redux.js"></script>
+    <script src="https://unpkg.com/react-redux@7.2.6/dist/react-redux.min.js"></script>
     <title>Udacity To-Dos and Goals</title>
 </head>
 <body>
@@ -414,7 +415,7 @@
                 </div>
             )
         }
-
+/*
         const ConnectedTodos = () => {
             return (
                 <Context.Consumer>
@@ -428,6 +429,11 @@
                 </Context.Consumer>
             )
         }
+*/
+
+        const ConnectedTodos = ReactRedux.connect(() => ({
+           todos: state.todos 
+        }))(Todos);
 
         const Goals = (props) => {
             const inputRef = React.useRef();
@@ -454,7 +460,7 @@
                 </div>
             )
         }
-
+/*
         const ConnectedGoals = () => {
             return(
                 <Context.Consumer>
@@ -468,24 +474,23 @@
                 </Context.Consumer>
             )
         }
+*/
+        const ConnectedGoals = ReactRedux.connect(() => ({
+           goals: state.goals 
+        }))(Goals);
 
         const App = (props) => {
-            const [value, setValue] = React.useState(0)
 
             React.useEffect(() => {
-                props.store.dispatch(handleInitialData())
-
-                props.store.subscribe(() => {
-                    setValue((value) => value + 1)
-                })
+                props.dispatch(handleInitialData());
             }, [])
         
 
             
 
-            const {loading} = props.store.getState()
+         //   const {loading} = props.store.getState()
 
-            if(loading === true){
+            if(props.loading === true){
                 return (
                     <div id="loading">
                         <h3 id="loading-text">Loading</h3>
@@ -505,7 +510,7 @@
                 
             )
         }
-
+/*
         const ConnectedApp = () => {
             return (
                 <Context.Consumer>
@@ -517,8 +522,58 @@
                 </Context.Consumer>
             )
         }
- 
+*/
+                
+        const ConnectedApp = ReactRedux.connect((state) => ({
+            loading: state.loading
+        }))(App); 
+
+/*
         const Context = React.createContext();
+
+        function connect(mapStateToProps) {
+            return (Component) => {
+                const Receiver = (props) => {
+                    const [value, setValue] = React.useState(0
+
+                    )
+                    React.useEffect(() => {
+                        let unmounted = false;
+                        const {subscribe} = props.store;
+
+                        const unsubscribe = subscribe(() => {
+                            setValue((value) => value + 1);
+                        })
+
+                        return () => {
+                            unsubscribe();
+                            unmounted = true;
+                        }
+                    }, []);
+
+                    const {dispatch, getState} = props.store;
+                    const state = getState();
+                    const stateNeeded = mapStateToProps(state);
+
+                    return <Component {...stateNeeded} dispatch={dispatch}/>
+                }
+
+                const ConnectedComponent = () => {
+                    return (
+                        <Context.Consumer>
+                            {
+                                (store) => {
+                                    return <Receiver store={store}/>
+                                }
+                            }
+                        </Context.Consumer>
+                    )
+                }
+
+                return ConnectedComponent;
+            }
+        }
+
 
         const Provider = (props) => {
             return(
@@ -527,8 +582,8 @@
                 </Context.Provider>
             )
         }
-
-        ReactDOM.render(<Provider store={store}><ConnectedApp /></Provider>, document.getElementById("app"))
+*/
+        ReactDOM.render(<ReactRedux.Provider store={store}><ConnectedApp /></ReactRedux.Provider>, document.getElementById("app"))
     </script>
 </body>
 </html>
